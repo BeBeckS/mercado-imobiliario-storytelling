@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import pandas as pd
@@ -7,7 +8,11 @@ ANALYTICS_DATA_DIR = Path(__file__).resolve().parents[1] / "data" / "analytics"
 
 
 def _load_csv(file_name: str) -> pd.DataFrame:
-    file_path = ANALYTICS_DATA_DIR / file_name
+    configured_dir = os.environ.get("ANALYTICS_DATA_DIR")
+    if configured_dir is not None and not configured_dir.strip():
+        raise ValueError("ANALYTICS_DATA_DIR não pode estar vazia.")
+    data_dir = Path(configured_dir) if configured_dir is not None else ANALYTICS_DATA_DIR
+    file_path = data_dir / file_name
     if not file_path.is_file():
         raise FileNotFoundError(
             f"Arquivo obrigatório não encontrado: {file_path}"

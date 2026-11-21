@@ -53,8 +53,20 @@ MAIN_COLUMNS = {
 def analytics_data_dir(tmp_path, monkeypatch):
     for file_name, contents in CSV_FIXTURES.items():
         (tmp_path / file_name).write_text(contents, encoding="utf-8")
-    monkeypatch.setattr(data_loader, "ANALYTICS_DATA_DIR", tmp_path)
+    monkeypatch.setenv("ANALYTICS_DATA_DIR", str(tmp_path))
     return tmp_path
+
+
+def test_default_data_directory_is_project_analytics_dir(monkeypatch, tmp_path):
+    monkeypatch.delenv("ANALYTICS_DATA_DIR", raising=False)
+    monkeypatch.chdir(tmp_path)
+
+    data = load_all_data()
+
+    for file_name, loader in LOADERS.items():
+        expected = pd.read_csv(data_loader.ANALYTICS_DATA_DIR / file_name)
+        pd.testing.assert_frame_equal(data[file_name.removesuffix(".csv")], expected)
+        pd.testing.assert_frame_equal(loader(), expected)
 
 
 def test_load_all_data_returns_five_dataframes_with_main_columns(
@@ -75,6 +87,7 @@ def test_each_loader_reads_its_csv(analytics_data_dir, file_name, loader):
 
     assert isinstance(result, pd.DataFrame)
     assert MAIN_COLUMNS[file_name].issubset(result.columns)
+    pd.testing.assert_frame_equal(result, pd.read_csv(analytics_data_dir / file_name))
 
 
 def test_load_all_data_raises_when_a_required_file_is_missing(
@@ -83,4 +96,11 @@ def test_load_all_data_raises_when_a_required_file_is_missing(
     (analytics_data_dir / "correlations.csv").unlink()
 
     with pytest.raises(FileNotFoundError, match="correlations.csv"):
+        load_all_data()
+
+
+def test_empty_data_directory_is_rejected(monkeypatch):
+    monkeypatch.setenv("ANALYTICS_DATA_DIR", " ")
+
+    with pytest.raises(ValueError, match="ANALYTICS_DATA_DIR"):
         load_all_data()

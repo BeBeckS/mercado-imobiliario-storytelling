@@ -28,6 +28,17 @@ Copie para `data/analytics/` os cinco artefatos CSV produzidos pelo projeto
 O projeto consome somente esses CSVs; não inclui os Parquets nem o código-fonte
 do Analytics.
 
+Por padrão, os dados são lidos de `data/analytics/` na raiz do projeto. Para
+usar outro diretório, defina `ANALYTICS_DATA_DIR` antes de iniciar a aplicação:
+
+```powershell
+$env:ANALYTICS_DATA_DIR = "C:\dados\analytics"
+streamlit run src/app.py
+```
+
+O diretório configurado deve conter os cinco CSVs; caminhos relativos são
+interpretados a partir do diretório de execução. Uma variável vazia é inválida.
+
 ## Amostra e limitações
 
 Os artefatos registram **285 imóveis**. Segundo as informações dos dados de
@@ -71,3 +82,15 @@ dependência de desenvolvimento e não faz parte das dependências da aplicaçã
 python -m pip install pytest
 pytest -q
 ```
+
+### Docker
+
+Com o Docker instalado, execute na raiz do projeto:
+
+```powershell
+docker build -t mercado-imobiliario-storytelling .
+docker run --rm -p 8501:8501 mercado-imobiliario-storytelling
+```
+
+A aplicação estará disponível em `http://localhost:8501`. Os CSVs de
+`data/analytics/` são incluídos na imagem.
